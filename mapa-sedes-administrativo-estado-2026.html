@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sedes Examen Administrativo del Estado 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Montserrat,sans-serif;background:#f7f5f0;color:#2c2c2c}
+.adj-mapa{max-width:1100px;margin:0 auto;padding:24px 16px 40px}
+
+/* Header */
+.adj-mapa-header{text-align:center;margin-bottom:20px}
+.adj-mapa-header .badge{display:inline-block;background:#1a3a5c;color:#fff;font-size:.73rem;font-weight:600;padding:4px 14px;border-radius:20px;margin-bottom:10px;letter-spacing:.05em;text-transform:uppercase}
+.adj-mapa-header h2{font-size:clamp(1.3rem,3.5vw,1.8rem);color:#1a3a5c;margin-bottom:6px;font-weight:700}
+.adj-mapa-header .subtitle{font-size:.9rem;color:#6b7280;max-width:580px;margin:0 auto}
+
+/* Info bar */
+.adj-mapa-info{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#1a3a5c,#2d5f8a);color:#fff;padding:12px 18px;border-radius:10px;margin-bottom:16px;font-size:.85rem;line-height:1.5}
+.adj-mapa-info .ico{flex-shrink:0;font-size:1.4rem}
+
+/* Search / dropdown */
+.adj-mapa-search{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.adj-mapa-search label{font-size:.85rem;font-weight:600;color:#1a3a5c;white-space:nowrap}
+.adj-mapa-search select{flex:1;min-width:200px;max-width:400px;font-family:Montserrat,sans-serif;font-size:.85rem;padding:10px 14px;border:2px solid #e5e2db;border-radius:8px;background:#fff;color:#2c2c2c;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;transition:border-color .2s}
+.adj-mapa-search select:focus{outline:none;border-color:#1a3a5c}
+
+/* Map */
+#adj-map{width:100%;height:520px;border-radius:10px;box-shadow:0 4px 20px rgba(26,58,92,.12);z-index:1}
+@media(max-width:600px){#adj-map{height:400px}}
+
+/* City tags - hidden on small screens */
+.adj-city-grid{margin-top:16px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+@media(max-width:600px){.adj-city-grid{display:none}}
+.adj-city-tag{background:#fff;border:1px solid #e5e2db;padding:5px 12px;border-radius:20px;font-size:.76rem;font-weight:500;color:#6b7280;cursor:pointer;transition:all .2s;font-family:Montserrat,sans-serif}
+.adj-city-tag:hover,.adj-city-tag.active{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
+
+/* Leaflet popup */
+.leaflet-popup-content-wrapper{border-radius:10px!important;box-shadow:0 8px 30px rgba(0,0,0,.15)!important;padding:0!important;overflow:hidden}
+.leaflet-popup-content{margin:0!important;min-width:260px;max-width:320px;font-family:Montserrat,sans-serif!important}
+.leaflet-popup-tip{box-shadow:0 4px 10px rgba(0,0,0,.1)!important}
+.popup-header{background:#1a3a5c;color:#fff;padding:10px 14px;font-weight:700;font-size:.95rem}
+.popup-count{font-weight:400;font-size:.78rem;opacity:.8;display:block;margin-top:2px}
+.popup-venues-scroll{max-height:250px;overflow-y:auto}
+.popup-venue{padding:10px 14px;border-bottom:1px solid #f0eeea}
+.popup-venue:last-child{border-bottom:none}
+.popup-venue-name{font-weight:600;font-size:.82rem;color:#1a3a5c;margin-bottom:2px}
+.popup-venue-addr{font-size:.76rem;color:#6b7280;margin-bottom:5px;line-height:1.4}
+.popup-venue-link{display:inline-flex;align-items:center;gap:3px;font-size:.74rem;font-weight:600;color:#d4952e;text-decoration:none}
+.popup-venue-link:hover{color:#1a3a5c}
+.popup-venue-link svg{width:13px;height:13px}
+
+/* Footer */
+.adj-mapa-footer{text-align:center;margin-top:16px;font-size:.76rem;color:#6b7280}
+.adj-mapa-footer a{color:#2d5f8a}
+</style>
+</head>
+<body>
+<div class="adj-mapa">
+
+  <div class="adj-mapa-header">
+    <span class="badge">Examen 23 de mayo de 2026</span>
+    <h2>Mapa de Sedes del Examen de Administrativo del Estado</h2>
+    <p class="subtitle">Selecciona una provincia en el desplegable o haz clic en un marcador del mapa para ver las sedes con enlace a Google Maps.</p>
+  </div>
+
+  <div class="adj-mapa-info">
+    <span class="ico">📅</span>
+    <div><strong>23 de mayo de 2026</strong> · Ejercicio único a las 10:00 h (hora peninsular) / 09:00 h (Canarias).<br>Fuente: Resolución del INAP de 6 de mayo de 2026.</div>
+  </div>
+
+  <div class="adj-mapa-search">
+    <label for="adj-city-select">📍 Buscar provincia:</label>
+    <select id="adj-city-select">
+      <option value="">-- Selecciona una provincia --</option>
+    </select>
+  </div>
+
+  <div id="adj-map"></div>
+
+  <div class="adj-city-grid" id="adjCityGrid"></div>
+
+  <p class="adj-mapa-footer">La distribución de aspirantes por aula se publica en <a href="https://sede.inap.gob.es/" target="_blank" rel="noopener">sede.inap.gob.es</a>.</p>
+
+</div>
+<script>
+const sedes=[
+{city:"A Coruña",lat:43.3325,lng:-8.4107,venues:[
+{name:"Facultad de Informática, Univ. de A Coruña",address:"Campus de Elviña, 15008 A Coruña",q:"Facultad+Informatica+Universidad+A+Coruna+Campus+Elvina"},
+{name:"Facultad de Economía y Empresa, Univ. de A Coruña",address:"Campus de Elviña, 15008 A Coruña",q:"Facultad+Economia+Empresa+Universidad+A+Coruna+Campus+Elvina"}]},
+{city:"Álava",lat:42.8467,lng:-2.6726,venues:[
+{name:"Facultad de Farmacia, Univ. del País Vasco",address:"Paseo de la Universidad 7, 01006 Vitoria-Gasteiz",q:"Facultad+Farmacia+Universidad+Pais+Vasco+Vitoria-Gasteiz"}]},
+{city:"Alicante",lat:38.3853,lng:-0.5131,venues:[
+{name:"Aulario I, Universidad de Alicante",address:"Carr. San Vicente del Raspeig s/n, 03690 Alicante",q:"Aulario+I+Universidad+Alicante"},
+{name:"Aulario II, Universidad de Alicante",address:"Carr. San Vicente del Raspeig s/n, 03690 Alicante",q:"Aulario+II+Universidad+Alicante"}]},
+{city:"Asturias",lat:43.3603,lng:-5.8448,venues:[
+{name:"Fac. Economía y Empresa, Univ. de Oviedo",address:"Campus del Cristo, C/ Valentín Andrés Álvarez s/n, 33006 Oviedo",q:"Facultad+Economia+Empresa+Universidad+Oviedo+Campus+Cristo"},
+{name:"Fac. de Derecho, Univ. de Oviedo",address:"Campus del Cristo, C/ Valentín Andrés Álvarez s/n, 33006 Oviedo",q:"Facultad+Derecho+Universidad+Oviedo+Campus+Cristo"}]},
+{city:"Badajoz",lat:38.8794,lng:-6.9707,venues:[
+{name:"Fac. CC. Económicas, Univ. Extremadura",address:"Avda. de Elvas s/n, 06006 Badajoz",q:"Facultad+Ciencias+Economicas+Universidad+Extremadura+Badajoz"},
+{name:"Fac. Educación y Psicología, Univ. Extremadura",address:"Avda. de Elvas s/n, 06006 Badajoz",q:"Facultad+Educacion+Psicologia+Universidad+Extremadura+Badajoz"},
+{name:"Esc. Ingenierías Industriales, Univ. Extremadura",address:"Av. de Elvas s/n, 06006 Badajoz",q:"Escuela+Ingenierias+Industriales+Universidad+Extremadura+Badajoz"}]},
+{city:"Barcelona",lat:41.3888,lng:2.1590,venues:[
+{name:"Edificio Jaume I, Campus Ciutadella, UPF",address:"C/ Ramon Trias Fargas 25-27, 08005 Barcelona",q:"Edificio+Jaume+I+Campus+Ciutadella+Universitat+Pompeu+Fabra+Barcelona"},
+{name:"Facultad de Derecho, Univ. de Barcelona",address:"Av. Diagonal 684, 08034 Barcelona",q:"Facultad+Derecho+Universidad+Barcelona+Diagonal+684"}]},
+{city:"Cádiz",lat:36.5271,lng:-6.1924,venues:[
+{name:"Fac. de Ciencias, Univ. de Cádiz",address:"Campus Puerto Real, Avda. República Saharaui s/n, 11519 Puerto Real",q:"Facultad+Ciencias+Universidad+Cadiz+Puerto+Real"},
+{name:"Esc. Superior de Ingeniería, Univ. de Cádiz",address:"Campus Puerto Real, Avda. Universidad de Cádiz 10, 11519 Puerto Real",q:"Escuela+Superior+Ingenieria+Universidad+Cadiz+Puerto+Real"},
+{name:"Fac. CC. Educación, Univ. de Cádiz",address:"Campus Puerto Real, Avda. República Saharaui s/n, 11519 Puerto Real",q:"Facultad+Ciencias+Educacion+Universidad+Cadiz+Puerto+Real"},
+{name:"Aularios Río San Pedro, Univ. de Cádiz",address:"Campus Puerto Real, Avda. República Saharaui s/n, 11519 Puerto Real",q:"Aularios+Rio+San+Pedro+Universidad+Cadiz+Puerto+Real"}]},
+{city:"Cantabria",lat:43.4623,lng:-3.8100,venues:[
+{name:"ETS Ing. Industriales y Telecomunicación, Univ. Cantabria",address:"Av. de los Castros 46, 39005 Santander",q:"ETS+Ingenieros+Industriales+Telecomunicacion+Universidad+Cantabria+Santander"}]},
+{city:"Ceuta",lat:35.8893,lng:-5.3213,venues:[
+{name:"Universidad de Granada, Campus de Ceuta",address:"Cortadura del Valle s/n, 51001 Ceuta",q:"Universidad+Granada+Campus+Ceuta"}]},
+{city:"Córdoba",lat:37.8882,lng:-4.7794,venues:[
+{name:"Aulario Averroes, Univ. de Córdoba",address:"Campus de Rabanales, Ctra. N-IVa Km 396, 14071 Córdoba",q:"Aulario+Averroes+Universidad+Cordoba+Campus+Rabanales"}]},
+{city:"Granada",lat:37.1773,lng:-3.5986,venues:[
+{name:"Facultad de Ciencias, Univ. de Granada",address:"Avd. de Fuente Nueva s/n, 18001 Granada",q:"Facultad+Ciencias+Universidad+Granada+Fuente+Nueva"},
+{name:"ETS Ing. Caminos, Univ. de Granada",address:"C/ Doctor Severo Ochoa s/n, 18001 Granada",q:"ETS+Ingenieria+Caminos+Universidad+Granada"},
+{name:"Aulario Fac. Derecho, Univ. de Granada",address:"Av. de Fuente Nueva 11, 18001 Granada",q:"Aulario+Facultad+Derecho+Universidad+Granada+Fuente+Nueva"}]},
+{city:"Illes Balears",lat:39.6350,lng:2.6502,venues:[
+{name:"Edificio Gaspar Melchor de Jovellanos, UIB",address:"Ctra. Valldemossa Km 7,5, 07122 Palma",q:"Edificio+Jovellanos+Universitat+Illes+Balears+Palma"}]},
+{city:"La Rioja",lat:42.4650,lng:-2.4500,venues:[
+{name:"Edificio Politécnico, Univ. de La Rioja",address:"C/ Luis de Ulloa 4, 26004 Logroño",q:"Edificio+Politecnico+Universidad+La+Rioja+Logrono"},
+{name:"Edificio CCT, Univ. de La Rioja",address:"C/ Madre de Dios 53, 26006 Logroño",q:"Edificio+CCT+Universidad+La+Rioja+Logrono"}]},
+{city:"Las Palmas de Gran Canaria",lat:28.0997,lng:-15.4134,venues:[
+{name:"Edificio Ingenierías, ULPGC",address:"Campus de Tafira s/n, 35017 Las Palmas",q:"Edificio+Ingenierias+ULPGC+Campus+Tafira"},
+{name:"Escuela de Arquitectura, ULPGC",address:"Campus de Tafira s/n, 35017 Las Palmas",q:"Escuela+Arquitectura+ULPGC+Campus+Tafira"},
+{name:"Fac. CC. Económicas y Turismo, ULPGC",address:"Campus de Tafira s/n, 35017 Las Palmas",q:"Facultad+Ciencias+Economicas+ULPGC+Campus+Tafira"},
+{name:"Edificio Ciencias Jurídicas, ULPGC",address:"Campus de Tafira s/n, 35017 Las Palmas",q:"Edificio+Ciencias+Juridicas+ULPGC+Campus+Tafira"}]},
+{city:"Madrid",lat:40.4530,lng:-3.7278,venues:[
+{name:"Fac. CC. Biológicas, UCM",address:"C/ José Antonio Novais 12, 28040 Madrid",q:"Facultad+Ciencias+Biologicas+UCM+Madrid"},
+{name:"Fac. CC. de la Información, UCM",address:"Avda. Complutense s/n, 28040 Madrid",q:"Facultad+Ciencias+Informacion+UCM+Madrid"},
+{name:"Fac. de Derecho, UCM",address:"Pl. Menéndez Pelayo 4, 28040 Madrid",q:"Facultad+Derecho+UCM+Madrid"},
+{name:"Fac. de Farmacia, UCM",address:"Pl. Ramón y Cajal s/n, 28040 Madrid",q:"Facultad+Farmacia+UCM+Madrid"},
+{name:"Fac. Geografía e Historia, UCM",address:"C/ Prof. Aranguren s/n, 28040 Madrid",q:"Facultad+Geografia+Historia+UCM+Madrid"},
+{name:"Fac. CC. Geológicas, UCM",address:"C/ José Antonio Novais 12, 28040 Madrid",q:"Facultad+Ciencias+Geologicas+UCM+Madrid"},
+{name:"Fac. de Informática, UCM",address:"C/ Prof. José García Santesmases 9, 28040 Madrid",q:"Facultad+Informatica+UCM+Madrid"},
+{name:"Fac. CC. Matemáticas, UCM",address:"Pl. de las Ciencias 3, 28040 Madrid",q:"Facultad+Ciencias+Matematicas+UCM+Madrid"},
+{name:"Edificio Multiusos, UCM",address:"C/ Profesor Aranguren 4, 28040 Madrid",q:"Edificio+Multiusos+UCM+Madrid"},
+{name:"Fac. de Odontología, UCM",address:"Pza. Ramón y Cajal s/n, 28040 Madrid",q:"Facultad+Odontologia+UCM+Madrid"},
+{name:"Fac. CC. Químicas, UCM",address:"Pl. de las Ciencias 2, 28040 Madrid",q:"Facultad+Ciencias+Quimicas+UCM+Madrid"},
+{name:"Fac. de Veterinaria, UCM",address:"Avda. Puerta de Hierro s/n, 28040 Madrid",q:"Facultad+Veterinaria+UCM+Madrid"},
+{name:"INAP",address:"C/ Atocha 106, 28012 Madrid",q:"INAP+Atocha+106+Madrid"}]},
+{city:"Málaga",lat:36.7152,lng:-4.4781,venues:[
+{name:"Fac. de Derecho, Univ. de Málaga",address:"Bulevar Louis Pasteur 26, Campus Teatinos, 29010 Málaga",q:"Facultad+Derecho+Universidad+Malaga+Campus+Teatinos"},
+{name:"Fac. CC. Comunicación y Turismo",address:"C/ León Tolstoi s/n, Campus Teatinos, 29010 Málaga",q:"Facultad+Ciencias+Comunicacion+Turismo+Universidad+Malaga"},
+{name:"ETS Ing. Industrial, Univ. de Málaga",address:"C/ Arq. Francisco Peñalosa 6, Campanillas, 29010 Málaga",q:"ETS+Ingenieria+Industrial+Universidad+Malaga+Campanillas"},
+{name:"Complejo Estudios Sociales y Comercio",address:"Av. Francisco Trujillo Villanueva, Campanillas, 29010 Málaga",q:"Complejo+Estudios+Sociales+Comercio+Universidad+Malaga"},
+{name:"Fac. Psicología y Logopedia",address:"C/ Doctor Ortiz Ramos 12, 29010 Málaga",q:"Facultad+Psicologia+Logopedia+Universidad+Malaga"}]},
+{city:"Melilla",lat:35.2923,lng:-2.9381,venues:[
+{name:"Campus Univ. de Granada en Melilla",address:"C/ Santander 1, 52005 Melilla",q:"Campus+Universidad+Granada+Melilla"}]},
+{city:"Murcia",lat:38.0202,lng:-1.1300,venues:[
+{name:"Fac. Economía y Empresa, Univ. de Murcia",address:"Campus Espinardo, Edificio 2, 30100 Murcia",q:"Facultad+Economia+Empresa+Universidad+Murcia+Espinardo"},
+{name:"Fac. Matemáticas, Aulario General",address:"Campus Espinardo, Edificio 15, 30100 Murcia",q:"Aulario+General+Universidad+Murcia+Espinardo"},
+{name:"Aulario Giner de los Ríos",address:"Campus Espinardo, Edificio 10, 30100 Murcia",q:"Aulario+Giner+Rios+Universidad+Murcia+Espinardo"},
+{name:"Fac. CC. Trabajo y Trabajo Social",address:"Campus Espinardo, Edificio 11, 30100 Murcia",q:"Facultad+Ciencias+Trabajo+Universidad+Murcia+Espinardo"},
+{name:"Aulario Norte",address:"Campus Espinardo, Edificio 30, 30100 Murcia",q:"Aulario+Norte+Universidad+Murcia+Espinardo"},
+{name:"Fac. de Biología",address:"Campus Espinardo, Edificio 20, 30100 Murcia",q:"Facultad+Biologia+Universidad+Murcia+Espinardo"}]},
+{city:"Navarra",lat:42.8064,lng:-1.6365,venues:[
+{name:"Fac. CC. de la Salud, UPNA",address:"Avda. de Barañain s/n, 31008 Pamplona",q:"Facultad+Ciencias+Salud+Universidad+Publica+Navarra+Pamplona"}]},
+{city:"Pontevedra",lat:42.1700,lng:-8.6880,venues:[
+{name:"Fac. CC. Económicas, Univ. de Vigo",address:"Campus Lagoas Marcosende, 36310 Vigo",q:"Facultad+Ciencias+Economicas+Universidad+Vigo+Lagoas+Marcosende"},
+{name:"Fac. CC. Jurídicas y del Trabajo, Univ. de Vigo",address:"Campus Lagoas Marcosende, 36310 Vigo",q:"Facultad+Ciencias+Juridicas+Trabajo+Universidad+Vigo"}]},
+{city:"Santa Cruz de Tenerife",lat:28.4870,lng:-16.3134,venues:[
+{name:"Aulario General César Manrique",address:"C/ José Luis Moreno Becerra s/n, Campus de Guajara, 38200 La Laguna",q:"Aulario+Cesar+Manrique+Campus+Guajara+La+Laguna+Tenerife"},
+{name:"Fac. Economía, Empresa y Turismo",address:"Camino la Hornera s/n, 38200 La Laguna",q:"Facultad+Economia+Empresa+Turismo+Universidad+La+Laguna"},
+{name:"Facultad de Derecho",address:"Camino la Hornera 37, 38200 La Laguna",q:"Facultad+Derecho+Universidad+La+Laguna+Tenerife"}]},
+{city:"Sevilla",lat:37.3772,lng:-5.9869,venues:[
+{name:"Fac. CC. del Trabajo, Univ. de Sevilla",address:"C/ Enramadilla 18-20, Campus Pirotecnia, 41018 Sevilla",q:"Facultad+Ciencias+Trabajo+Universidad+Sevilla"},
+{name:"Fac. CC. de la Educación, Univ. de Sevilla",address:"C/ Pirotecnia s/n, 41013 Sevilla",q:"Facultad+Ciencias+Educacion+Universidad+Sevilla+Pirotecnia"},
+{name:"Fac. CC. Económicas, Univ. de Sevilla",address:"Av. Ramón y Cajal 1, 41018 Sevilla",q:"Facultad+Ciencias+Economicas+Universidad+Sevilla+Ramon+Cajal"},
+{name:"Fac. Turismo y Finanzas, Univ. de Sevilla",address:"Av. San Francisco Javier s/n, 41018 Sevilla",q:"Facultad+Turismo+Finanzas+Universidad+Sevilla"},
+{name:"Fac. de Matemáticas, Univ. de Sevilla",address:"C/ Tarfia s/n, Campus Reina Mercedes, 41012 Sevilla",q:"Facultad+Matematicas+Universidad+Sevilla+Reina+Mercedes"}]},
+{city:"Toledo",lat:39.8581,lng:-4.0226,venues:[
+{name:"I.E.S. Universidad Laboral",address:"Avenida de Europa 28, 45003 Toledo",q:"IES+Universidad+Laboral+Toledo"},
+{name:"I.E.S. María Pacheco",address:"Avenida de Barber 4, 45004 Toledo",q:"IES+Maria+Pacheco+Toledo"},
+{name:"I.E.S. Carlos III",address:"Avenida de Francia 5, 45005 Toledo",q:"IES+Carlos+III+Toledo"},
+{name:"I.E.S. Azarquiel",address:"Paseo de San Eugenio 21, 45003 Toledo",q:"IES+Azarquiel+Toledo"}]},
+{city:"Valencia",lat:39.4809,lng:-0.3404,venues:[
+{name:"Aulari Nord, Universitat de València",address:"Campus dels Tarongers, Avda. dels Tarongers s/n, 46022 València",q:"Aulari+Nord+Campus+Tarongers+Universitat+Valencia"},
+{name:"Aulari Sud, Universitat de València",address:"Campus dels Tarongers, Avda. dels Tarongers s/n, 46022 València",q:"Aulari+Sud+Campus+Tarongers+Universitat+Valencia"}]},
+{city:"Valladolid",lat:41.6520,lng:-4.7286,venues:[
+{name:"ETSI Telecomunicación e Informática",address:"P.º de Belén 15, 47011 Valladolid",q:"ETSI+Telecomunicacion+Informatica+Universidad+Valladolid"},
+{name:"Fac. Educación y Trabajo Social",address:"P.º de Belén 1, 47011 Valladolid",q:"Facultad+Educacion+Trabajo+Social+Universidad+Valladolid"},
+{name:"Fac. Filosofía y Letras",address:"Pl. Campus Universitario s/n, 47011 Valladolid",q:"Facultad+Filosofia+Letras+Universidad+Valladolid"},
+{name:"Fac. CC. Económicas y Empresariales",address:"Avda. del Valle Esgueva 6, 47011 Valladolid",q:"Facultad+Ciencias+Economicas+Universidad+Valladolid"},
+{name:"Aulario de Económicas",address:"Paseo del Cauce s/n, 47011 Valladolid",q:"Aulario+Economicas+Universidad+Valladolid"},
+{name:"Fac. de Comercio",address:"Pl. Campus Universitario 1, 47011 Valladolid",q:"Facultad+Comercio+Universidad+Valladolid"}]},
+{city:"Zaragoza",lat:41.6560,lng:-0.8773,venues:[
+{name:"Fac. de Derecho, Univ. de Zaragoza",address:"Campus San Francisco, C/ Pedro Cerbuna 12, 50009 Zaragoza",q:"Facultad+Derecho+Universidad+Zaragoza+Campus+San+Francisco"},
+{name:"Fac. de Medicina, Univ. de Zaragoza",address:"Campus San Francisco, C/ Domingo Miral s/n, 50009 Zaragoza",q:"Facultad+Medicina+Universidad+Zaragoza"},
+{name:"Fac. Filosofía y Letras, Univ. de Zaragoza",address:"Campus San Francisco, C/ Pedro Cerbuna 12, 50009 Zaragoza",q:"Facultad+Filosofia+Letras+Universidad+Zaragoza"}]}
+];
+
+/* Init map */
+const map=L.map('adj-map',{center:[39.5,-3.0],zoom:6,minZoom:5,maxZoom:17,scrollWheelZoom:true});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/">CARTO</a>',subdomains:'abcd',maxZoom:19}).addTo(map);
+
+const pinIcon=L.divIcon({className:'',html:'<div style="width:28px;height:28px;background:#e8a838;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;background:#fff;border-radius:50%"></div></div>',iconSize:[28,28],iconAnchor:[14,14],popupAnchor:[0,-16]});
+const activeIcon=L.divIcon({className:'',html:'<div style="width:32px;height:32px;background:#1a3a5c;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 12px rgba(26,58,92,.4);display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;background:#e8a838;border-radius:50%"></div></div>',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-18]});
+
+const markers=[];
+const cityGrid=document.getElementById('adjCityGrid');
+const citySelect=document.getElementById('adj-city-select');
+
+function buildPopup(sede){
+  const n=sede.venues.length;
+  let h='<div class="popup-header">'+sede.city+'<span class="popup-count">'+n+' sede'+(n>1?'s':'')+' de examen</span></div><div class="popup-venues-scroll">';
+  sede.venues.forEach(v=>{
+    h+='<div class="popup-venue"><div class="popup-venue-name">'+v.name+'</div><div class="popup-venue-addr">'+v.address+'</div><a class="popup-venue-link" href="https://www.google.com/maps/search/?api=1&query=' + v.q + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Ver en Google Maps</a></div>';
+  });
+  return h+'</div>';
+}
+
+function openCity(idx){
+  const sede=sedes[idx];
+  map.setView([sede.lat,sede.lng],12,{animate:true});
+  markers[idx].openPopup();
+}
+
+sedes.forEach((sede,idx)=>{
+  const marker=L.marker([sede.lat,sede.lng],{icon:pinIcon}).addTo(map).bindPopup(buildPopup(sede),{maxWidth:320,maxHeight:380});
+  marker.on('popupopen',()=>{
+    markers.forEach((m,i)=>m.setIcon(i===idx?activeIcon:pinIcon));
+    document.querySelectorAll('.adj-city-tag').forEach((t,i)=>t.classList.toggle('active',i===idx));
+    citySelect.value=idx;
+  });
+  marker.on('popupclose',()=>{
+    marker.setIcon(pinIcon);
+    document.querySelectorAll('.adj-city-tag').forEach(t=>t.classList.remove('active'));
+    citySelect.value='';
+  });
+  markers.push(marker);
+
+  /* Dropdown option */
+  const opt=document.createElement('option');
+  opt.value=idx;
+  opt.textContent=sede.city+' ('+sede.venues.length+' sede'+(sede.venues.length>1?'s':'')+')';
+  citySelect.appendChild(opt);
+
+  /* City tag (desktop) */
+  const tag=document.createElement('span');
+  tag.className='adj-city-tag';
+  tag.textContent=sede.city;
+  tag.addEventListener('click',()=>openCity(idx));
+  cityGrid.appendChild(tag);
+});
+
+/* Dropdown change */
+citySelect.addEventListener('change',function(){
+  if(this.value!=='') openCity(parseInt(this.value));
+});
+</script>
+</body>
+</html>
